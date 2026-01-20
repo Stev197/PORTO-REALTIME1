@@ -1,0 +1,4048 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PORTO REALTIME</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        body { 
+            font-family: 'Poppins', sans-serif;
+            background: #0f0f1a;
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: var(--text-primary); /* PERBAIKAN: Gunakan variabel CSS */
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        /* Login Page */
+        #loginPage {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0c0c0c, #1a1a1a);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        body.light-theme #loginPage {
+            background: linear-gradient(135deg, #f5f7fa, #e4e8f0);
+        }
+        
+        .login-box {
+            background: rgba(30, 30, 46, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 10;
+        }
+        
+        body.light-theme .login-box {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: #00ff88;
+            font-weight: 700;
+        }
+        
+        body.light-theme h1 {
+            color: var(--primary);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        body.light-theme .subtitle {
+            color: var(--text-secondary);
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        body.light-theme .input-group label {
+            color: var(--text-secondary);
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        body.light-theme .input-group input {
+            color: var(--text-primary);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #00ff88;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+        }
+        
+        body.light-theme .input-group input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(67, 97, 238, 0.2);
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 40px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        body.light-theme .input-icon {
+            color: var(--text-secondary);
+        }
+        
+        .btn-login {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        .btn-login:hover {
+            background: linear-gradient(135deg, #00cc6a, #00ff88);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 255, 136, 0.3);
+        }
+        
+        /* Alert Styles */
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            animation: slideIn 0.5s ease;
+        }
+        
+        .alert-success {
+            background: rgba(0, 255, 136, 0.1);
+            color: #00ff88;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+        
+        .alert-error {
+            background: rgba(255, 107, 107, 0.1);
+            color: #ff6b6b;
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+        
+        /* Floating shapes */
+        .floating-shape {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: float 20s infinite linear;
+        }
+        
+        .shape1 {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, #00ff88, #0088ff);
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .shape2 {
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(135deg, #ff0088, #ff8800);
+            bottom: 10%;
+            right: 10%;
+            animation-delay: 5s;
+        }
+        
+        @keyframes float {
+            0%,100% { transform: translate(0,0) rotate(0deg); }
+            25% { transform: translate(20px,20px) rotate(90deg); }
+            50% { transform: translate(0,40px) rotate(180deg); }
+            75% { transform: translate(-20px,20px) rotate(270deg); }
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* ========== PORTO V4 STYLES ========== */
+        /* Base Styles */
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #2a2b36;
+            --accent: #ffd700;
+            --success: #4ecdc4;
+            --danger: #ff6b6b;
+            --warning: #ffa94d;
+            --dark: #1e1f29;
+            --light: #f8f9fa;
+            --card-bg: #2a2b36;
+            --card-border: #3a3b46;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0b0;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            --border-radius: 16px;
+            --transition: all 0.3s ease;
+        }
+        body.light-theme {
+            background: #f5f7fa;
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #f5f7fa;
+            --accent: #ffd700;
+            --success: #2a9d8f;
+            --danger: #e53935;
+            --warning: #ff9800;
+            --dark: #f5f7fa;
+            --light: #2a2b36;
+            --card-bg: #ffffff;
+            --card-border: #e0e0e0;
+            --text-primary: #2a2b36;
+            --text-secondary: #666;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .portfolio-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(30, 31, 41, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 25px;
+            border: 1px solid rgba(58, 59, 70, 0.5);
+            transition: var(--transition);
+        }
+        body.light-theme .portfolio-container {
+            background: rgba(245, 247, 250, 0.9);
+            border: 1px solid rgba(224, 224, 224, 0.5);
+        }
+        /* Header Styles */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--card-border);
+            margin-bottom: 30px;
+            transition: border-color 0.3s;
+        }
+        .app-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .app-title h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary), var(--success));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .app-logo {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary), var(--success));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        /* Tab Navigation */
+        .tabs {
+            display: flex;
+            margin-bottom: 25px;
+            background: var(--card-bg);
+            border-radius: 50px;
+            padding: 5px;
+            transition: var(--transition);
+        }
+        .tab {
+            flex: 1;
+            padding: 15px 25px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: var(--text-secondary);
+        }
+        .tab.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        /* Theme Toggle Button */
+        .theme-toggle {
+            background: linear-gradient(135deg, var(--card-bg), var(--dark));
+            border: 1px solid var(--card-border);
+            border-radius: 50px;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .theme-toggle:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        /* Price Display */
+        .price-display-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .price-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: var(--transition);
+        }
+        .price-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .price-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .price-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .currency-selector, .coin-selector {
+            flex: 1;
+            position: relative;
+        }
+        .currency-selector select, .coin-selector select {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-primary);
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            transition: var(--transition);
+            appearance: none;
+        }
+        .currency-selector::after, .coin-selector::after {
+            content: '\f078';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: var(--text-secondary);
+        }
+        .coin-price-display {
+            flex: 2;
+            display: flex;
+            align-items: center;
+            background: rgba(58, 59, 70, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            transition: var(--transition);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        body.light-theme .coin-price-display {
+            background: rgba(224, 224, 224, 0.3);
+        }
+        .price-label {
+            font-weight: 600;
+            margin-right: 10px;
+            color: var(--text-secondary);
+        }
+        .price-value {
+            font-weight: bold;
+            font-size: 22px;
+            font-family: 'Roboto', sans-serif;
+            flex: 1;
+            color: var(--text-primary);
+        }
+        .price-indicator {
+            font-size: 24px;
+            font-weight: bold;
+            min-width: 30px;
+            text-align: center;
+        }
+        .api-status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        .api-status.live {
+            background: rgba(78, 205, 196, 0.2);
+            color: var(--success);
+        }
+        .api-status.fallback {
+            background: rgba(255, 169, 77, 0.2);
+            color: var(--warning);
+        }
+        .api-status.error {
+            background: rgba(255, 107, 107, 0.2);
+            color: var(--danger);
+        }
+        .hour-change {
+            font-size: 16px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 5px;
+            margin-left: 5px;
+        }
+        .positive {
+            color: var(--success);
+            background: rgba(78, 205, 196, 0.15);
+        }
+        .negative {
+            color: var(--danger);
+            background: rgba(255, 107, 107, 0.15);
+        }
+        /* Form Styles */
+        .form-section {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            transition: var(--transition);
+        }
+        .form-section h3 {
+            margin-bottom: 20px;
+            font-size: 20px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-primary);
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            transition: var(--transition);
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+        .btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), #e53935);
+        }
+        .btn-danger:hover {
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+        }
+        /* Table Styles */
+        .table-container {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .table-header h2 {
+            font-size: 22px;
+            color: var(--text-primary);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            color: var(--text-primary);
+        }
+        th, td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid var(--card-border);
+        }
+        th {
+            background: rgba(58, 59, 70, 0.3);
+            color: var(--text-secondary);
+            font-weight: 600;
+            transition: var(--transition);
+        }
+        body.light-theme th {
+            background: rgba(224, 224, 224, 0.3);
+        }
+        tbody tr:hover {
+            background: rgba(67, 97, 238, 0.05);
+        }
+        tfoot tr {
+            background: rgba(58, 59, 70, 0.5);
+            font-weight: bold;
+        }
+        body.light-theme tfoot tr {
+            background: rgba(224, 224, 224, 0.5);
+        }
+        .coin-logo {
+            width: 30px;
+            height: 30px;
+            vertical-align: middle;
+            margin-right: 10px;
+            border-radius: 50%;
+        }
+        /* Dashboard Styles */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .dashboard-header h1 {
+            font-size: 28px;
+            color: var(--text-primary);
+        }
+        .dashboard-price-display {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+        }
+        /* Coin Selector */
+        .coin-selector-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        .coin-chip {
+            padding: 10px 20px;
+            background: var(--card-bg);
+            border-radius: 50px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid var(--card-border);
+            color: var(--text-primary);
+        }
+        .coin-chip.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border-color: var(--primary);
+        }
+        .coin-chip img {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+        }
+        /* Cards Container */
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--primary), var(--success));
+        }
+        .card h3 {
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 10px 0;
+            font-family: 'Roboto', sans-serif;
+            letter-spacing: -1px;
+            color: var(--text-primary);
+        }
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        /* Chart Container */
+        .chart-container {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            height: 420px;
+            position: relative;
+            transition: var(--transition);
+        }
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            z-index: 10;
+        }
+        .chart-header h2 {
+            font-size: 22px;
+            color: var(--text-primary);
+        }
+        .chart-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .chart-btn {
+            padding: 8px 15px;
+            background: rgba(58, 59, 70, 0.3);
+            border: none;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        body.light-theme .chart-btn {
+            background: rgba(224, 224, 224, 0.3);
+            color: var(--text-primary);
+        }
+        .chart-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        .chart-placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: var(--text-secondary);
+        }
+        /* Footer */
+        .app-footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            border-top: 1px solid var(--card-border);
+            margin-top: 30px;
+        }
+        /* Animations */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        /* Responsive */
+        @media (max-width: 992px) {
+            .app-header { flex-direction: column; gap: 20px; }
+            .header-actions { width: 100%; justify-content: center; }
+            .tabs { flex-direction: column; border-radius: var(--border-radius); }
+            .form-row { flex-direction: column; }
+            .dashboard-header { flex-direction: column; gap: 20px; }
+        }
+        @media (max-width: 768px) {
+            .price-content { flex-direction: column; }
+            .coin-price-display { width: 100%; }
+            .dashboard-price-display { width: 100%; justify-content: center; }
+        }
+        /* Loading spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary);
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-text {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            color: var(--text-secondary);
+        }
+        .transaction-type-buy {
+            color: var(--success);
+            font-weight: bold;
+        }
+        .transaction-type-sell {
+            color: var(--danger);
+            font-weight: bold;
+        }
+        .balance-info {
+            background: rgba(67, 97, 238, 0.1);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid var(--primary);
+            color: var(--text-primary);
+        }
+        
+        /* ========== ADMIN SPECIFIC STYLES ========== */
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .status-active {
+            background: rgba(78, 205, 196, 0.2);
+            color: var(--success);
+            border: 1px solid rgba(78, 205, 196, 0.3);
+        }
+        
+        .status-suspended {
+            background: rgba(255, 107, 107, 0.2);
+            color: var(--danger);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+        
+        .status-pending {
+            background: rgba(255, 169, 77, 0.2);
+            color: var(--warning);
+            border: 1px solid rgba(255, 169, 77, 0.3);
+        }
+        
+        .role-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .role-admin {
+            background: linear-gradient(135deg, rgba(67, 97, 238, 0.2), rgba(67, 97, 238, 0.1));
+            color: var(--primary);
+            border: 1px solid rgba(67, 97, 238, 0.3);
+        }
+        
+        .role-user {
+            background: rgba(160, 160, 176, 0.2);
+            color: var(--text-secondary);
+            border: 1px solid rgba(160, 160, 176, 0.3);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-primary);
+        }
+        
+        .action-btn-small {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+        
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 12px 15px 12px 45px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-primary);
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            border: 1px solid var(--card-border);
+            text-align: center;
+            transition: var(--transition);
+            color: var(--text-primary);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .stat-icon {
+            font-size: 32px;
+            margin-bottom: 15px;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+        }
+        
+        .stat-users .stat-icon {
+            background: linear-gradient(135deg, rgba(67, 97, 238, 0.2), rgba(67, 97, 238, 0.1));
+            color: var(--primary);
+        }
+        
+        .stat-active .stat-icon {
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.2), rgba(78, 205, 196, 0.1));
+            color: var(--success);
+        }
+        
+        .stat-suspended .stat-icon {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.2), rgba(255, 107, 107, 0.1));
+            color: var(--danger);
+        }
+        
+        .stat-admins .stat-icon {
+            background: linear-gradient(135deg, rgba(255, 169, 77, 0.2), rgba(255, 169, 77, 0.1));
+            color: var(--warning);
+        }
+        
+        .stat-number {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-family: 'Roboto', sans-serif;
+            color: var(--text-primary);
+        }
+        
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        
+        body.light-theme .modal-overlay {
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            border: 1px solid var(--card-border);
+            color: var(--text-primary);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .modal-header h2 {
+            font-size: 22px;
+            color: var(--text-primary);
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .close-modal:hover {
+            color: var(--danger);
+        }
+        
+        .user-activity-log {
+            background: rgba(58, 59, 70, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        body.light-theme .user-activity-log {
+            background: rgba(224, 224, 224, 0.3);
+        }
+        
+        .activity-item {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+        
+        body.light-theme .activity-item {
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        
+        .activity-time {
+            color: var(--text-secondary);
+            font-size: 12px;
+            display: block;
+        }
+        
+        .admin-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 15px 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border-left: 4px solid var(--primary);
+            z-index: 9999;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            color: var(--text-primary);
+        }
+        
+        .admin-notification.show {
+            transform: translateX(0);
+        }
+        
+        .admin-notification.success {
+            border-left-color: var(--success);
+        }
+        
+        .admin-notification.error {
+            border-left-color: var(--danger);
+        }
+        
+        .admin-notification.warning {
+            border-left-color: var(--warning);
+        }
+        
+        /* PERBAIKAN TAMBAHAN UNTUK WARNA DI TEMA LIGHT */
+        body.light-theme textarea.form-control {
+            color: var(--text-primary);
+            background: var(--card-bg);
+        }
+        
+        body.light-theme ::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+        
+        body.light-theme :-ms-input-placeholder {
+            color: var(--text-secondary);
+        }
+        
+        body.light-theme ::-ms-input-placeholder {
+            color: var(--text-secondary);
+        }
+        
+        body.light-theme .warning {
+            color: var(--warning);
+        }
+        
+        body.light-theme input[type="checkbox"] {
+            accent-color: var(--primary);
+        }
+        
+        body.light-theme option {
+            color: var(--text-primary);
+            background: var(--card-bg);
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="loginPage">
+        <div class="floating-shape shape1"></div>
+        <div class="floating-shape shape2"></div>
+        
+        <div class="login-box">
+            <h1>CRYPTO PORTO</h1>
+            <p class="subtitle">Secure Access to Your Portfolio</p>
+            
+            <div id="alertContainer"></div>
+            
+            <div class="input-group">
+                <label>USERNAME</label>
+                <input type="text" id="username" placeholder="Enter your username">
+                <span class="input-icon">👤</span>
+            </div>
+            
+            <div class="input-group">
+                <label>PASSWORD</label>
+                <input type="password" id="password" placeholder="Enter your password">
+                <span class="input-icon">🔑</span>
+            </div>
+            
+            <button class="btn-login" id="loginBtn">
+                <i class="fas fa-lock"></i> ACCESS PORTFOLIO
+            </button>
+            
+            <div style="margin-top: 20px; text-align: center; color: rgba(255,255,255,0.5); font-size: 14px;">
+                <i class="fas fa-cloud"></i> PORTO REALTIME SYNC
+            </div>
+        </div>
+    </div>
+
+    <!-- Portfolio Page (CRYPTO PORTFOLIO) -->
+    <div id="portfolioPage" class="hidden">
+        <div class="portfolio-container">
+            <header class="app-header">
+                <div class="app-title">
+                    <div class="app-logo">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <h1>PORTO REALTIME</h1>
+                </div>
+                <div class="header-actions">
+                    <button id="adminAccessBtn" class="btn btn-outline" style="display: none;">
+                        <i class="fas fa-user-shield"></i> Admin Panel
+                    </button>
+                    <button id="logoutPortfolioBtn" class="btn btn-outline">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                    <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
+            </header>
+            <div class="tabs">
+                <div class="tab active" data-tab="transactions">
+                    <i class="fas fa-exchange-alt"></i> Transactions
+                </div>
+                <div class="tab" data-tab="dashboard">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </div>
+            </div>
+            <!-- Transactions Tab -->
+            <div id="transactions" class="tab-content active">
+                <div class="price-display-container">
+                    <div class="price-card">
+                        <div class="price-header">
+                            <h3><i class="fas fa-chart-line"></i> Coin Price Tracker</h3>
+                        </div>
+                        <div class="price-content">
+                            <div class="currency-selector">
+                                <select id="currencySelector">
+                                    <option value="IDR">IDR (Rp)</option>
+                                    <option value="USD">USD ($)</option>
+                                    <option value="EUR">EUR (€)</option>
+                                    <option value="GBP">GBP (£)</option>
+                                    <option value="JPY">JPY (¥)</option>
+                                    <option value="AUD">AUD (A$)</option>
+                                    <option value="CAD">CAD (C$)</option>
+                                    <option value="CHF">CHF (CHF)</option>
+                                    <option value="SEK">SEK (kr)</option>
+                                    <option value="NOK">NOK (kr)</option>
+                                </select>
+                            </div>
+                            <div class="coin-selector">
+                                <select id="priceCoinSelector">
+                                    <option value="">Loading coins...</option>
+                                </select>
+                            </div>
+                            <div class="coin-price-display">
+                                <span class="price-label">Current Price:</span>
+                                <span id="priceDisplay" class="price-value">Select a coin</span>
+                                <span id="priceIndicator" class="price-indicator"></span>
+                                <span id="hourChange" class="hour-change"></span>
+                                <span id="apiStatus" class="api-status"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <h3><i class="fas fa-plus-circle"></i> Add Single Transaction</h3>
+                    <div id="balanceInfo" class="balance-info" style="display: none;">
+                        <!-- Balance information will be shown here -->
+                    </div>
+                    <form id="transactionForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="date">Date</label>
+                                <input type="date" id="date" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="coin">Coin</label>
+                                <select id="coin" class="form-control" required>
+                                    <option value="">Loading coins...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="type">Type</label>
+                                <select id="type" class="form-control">
+                                    <option value="buy">Buy</option>
+                                    <option value="sell">Sell</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="price">Price (IDR)</label>
+                                <input type="number" id="price" class="form-control" step="0.01" placeholder="Price per coin" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="modalBeli">Investment (IDR)</label>
+                                <input type="number" id="modalBeli" class="form-control" step="0.01" placeholder="Total investment" required>
+                            </div>
+                            <div class="form-group" style="align-self: flex-end;">
+                                <button type="submit" class="btn">
+                                    <i class="fas fa-plus"></i> Add Transaction
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="form-section">
+                    <h3><i class="fas fa-file-import"></i> Batch Transactions</h3>
+                    <form id="batchTransactionForm">
+                        <div class="form-group">
+                            <label for="batchInput">Enter transactions in CSV format (DATE,COIN,TYPE,HARGA BELI,MODAL BELI)</label>
+                            <textarea id="batchInput" class="form-control" rows="5" placeholder="Example: 2025-07-07,BTC,buy,1762332734,1000000"></textarea>
+                        </div>
+                        <div id="batchError" style="color: var(--danger); margin: 15px 0;"></div>
+                        <div>
+                            <button type="submit" class="btn">
+                                <i class="fas fa-upload"></i> Add Batch Transactions
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2><i class="fas fa-table"></i> Transaction History</h2>
+                        <button id="clearTransactions" class="btn btn-danger">
+                            <i class="fas fa-trash-alt"></i> Clear All
+                        </button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>DATE</th>
+                                <th>LOGO</th>
+                                <th>Coin Name</th>
+                                <th>Code</th>
+                                <th>Type</th>
+                                <th>Investment</th>
+                                <th>Buy Price</th>
+                                <th>Quantity</th>
+                                <th>Current Value</th>
+                                <th>Profit %</th>
+                                <th>P&L</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionTable">
+                            <!-- Transactions will be added here dynamically -->
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="8">TOTAL PORTFOLIO</td>
+                                <td id="totalValue">Rp0.00</td>
+                                <td id="totalProfitPercentage">0%</td>
+                                <td id="totalPNLValue">Rp0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="form-section">
+                    <div class="warning">
+                        <i class="fas fa-exclamation-circle"></i> Note: Realtime price updates are fetched from multiple cryptocurrency APIs. If one fails, the system automatically switches to another source.
+                    </div>
+                </div>
+            </div>
+            <!-- Dashboard Tab -->
+            <div id="dashboard" class="tab-content">
+                <div class="dashboard-header">
+                    <h1><i class="fas fa-chart-pie"></i> Portfolio Dashboard</h1>
+                    <div class="dashboard-price-display">
+                        <span id="dashboardPriceValue">Loading portfolio value...</span>
+                        <span id="dashboardPriceIndicator" class="price-indicator"></span>
+                    </div>
+                </div>
+                <div class="coin-selector-chips" id="coinSelector">
+                    <!-- Coin chips will be added here dynamically -->
+                </div>
+                <div class="cards-container">
+                    <div class="card">
+                        <h3><i class="fas fa-wallet"></i> Total Investment</h3>
+                        <div id="totalInvestment" class="card-value">Rp0</div>
+                        <p class="card-description">Total amount invested in crypto</p>
+                    </div>
+                    <div class="card">
+                        <h3><i class="fas fa-chart-bar"></i> Current Value</h3>
+                        <div id="currentValue" class="card-value">Rp0</div>
+                        <p class="card-description">Current value of your portfolio</p>
+                    </div>
+                    <div class="card">
+                        <h3><i class="fas fa-money-bill-wave"></i> Profit/Loss</h3>
+                        <div id="profitLoss" class="card-value">Rp0</div>
+                        <p class="card-description">Total unrealized P&L</p>
+                    </div>
+                    <div class="card">
+                        <h3><i class="fas fa-trophy"></i> Best Performer</h3>
+                        <div id="bestPerformer" class="card-value">-</div>
+                        <p class="card-description">Coin with highest returns</p>
+                    </div>
+                    <div class="card">
+                        <h3><i class="fas fa-percentage"></i> Profit Percentage</h3>
+                        <div id="profitPercentage" class="card-value">0%</div>
+                        <p class="card-description">Percentage gain/loss from initial investment</p>
+                    </div>
+                    <div class="card">
+                        <h3><i class="fas fa-calculator"></i> Average Price</h3>
+                        <div id="averagePrice" class="card-value">-</div>
+                        <p class="card-description">Average buy price per unit</p>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h2><i class="fas fa-chart-line"></i> Portfolio Performance</h2>
+                        <div class="chart-actions">
+                            <button id="showValueChart" class="chart-btn active">Value</button>
+                            <button id="showInvestmentChart" class="chart-btn">Investment</button>
+                            <button id="showHoldingsChart" class="chart-btn">Holdings</button>
+                        </div>
+                    </div>
+                    <canvas id="performanceChart"></canvas>
+                    <div id="chartPlaceholder" class="chart-placeholder">
+                        <h3>No data available</h3>
+                        <p>Add transactions to see performance chart</p>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2><i class="fas fa-history"></i> Recent Transactions</h2>
+                    </div>
+                    <table id="recentTransactions">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Coin</th>
+                                <th>Type</th>
+                                <th>Price</th>
+                                <th>Amount</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Transactions will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <footer class="app-footer">
+                <p>© 2025 Real-time PORTO Powered by Stev</p>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="adminPanel" class="hidden">
+        <div class="portfolio-container">
+            <header class="app-header">
+                <div class="app-title">
+                    <div class="app-logo" style="background: linear-gradient(135deg, #ff6b6b, #ffa94d);">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <h1>ADMIN PANEL</h1>
+                </div>
+                <div class="header-actions">
+                    <button id="adminBackBtn" class="btn btn-outline">
+                        <i class="fas fa-arrow-left"></i> Back to Portfolio
+                    </button>
+                    <button id="adminLogoutBtn" class="btn btn-outline">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                    <button class="theme-toggle" id="adminThemeToggle" title="Toggle theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
+            </header>
+            
+            <!-- Admin Tabs -->
+            <div class="tabs" id="adminTabs">
+                <div class="tab active" data-tab="adminUsers">
+                    <i class="fas fa-users"></i> User Management
+                </div>
+                <div class="tab" data-tab="adminStats">
+                    <i class="fas fa-chart-pie"></i> Statistics
+                </div>
+                <div class="tab" data-tab="adminSettings">
+                    <i class="fas fa-cogs"></i> Settings
+                </div>
+                <div class="tab" data-tab="adminLogs">
+                    <i class="fas fa-history"></i> Activity Logs
+                </div>
+            </div>
+            
+            <!-- Users Management Tab -->
+            <div id="adminUsers" class="tab-content active">
+                <div class="form-section">
+                    <div class="form-row" style="justify-content: space-between; align-items: center;">
+                        <h3><i class="fas fa-user-plus"></i> Add New User</h3>
+                        <button class="btn btn-success" id="addUserBtn">
+                            <i class="fas fa-plus"></i> Add User
+                        </button>
+                    </div>
+                    <form id="addUserForm" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="newUsername">Username</label>
+                                <input type="text" id="newUsername" class="form-control" placeholder="Enter username">
+                            </div>
+                            <div class="form-group">
+                                <label for="newPassword">Password</label>
+                                <input type="password" id="newPassword" class="form-control" placeholder="Enter password">
+                            </div>
+                            <div class="form-group">
+                                <label for="newRole">Role</label>
+                                <select id="newRole" class="form-control">
+                                    <option value="user">User</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="newEmail">Email (Optional)</label>
+                                <input type="email" id="newEmail" class="form-control" placeholder="user@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="newStatus">Initial Status</label>
+                                <select id="newStatus" class="form-control">
+                                    <option value="active">Active</option>
+                                    <option value="suspended">Suspended</option>
+                                    <option value="pending">Pending</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="align-self: flex-end;">
+                                <button type="button" id="saveUserBtn" class="btn">
+                                    <i class="fas fa-save"></i> Save User
+                                </button>
+                                <button type="button" id="cancelAddUserBtn" class="btn btn-outline" style="margin-left: 10px;">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="userSearch" placeholder="Search users by username, email, or role...">
+                </div>
+                
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2><i class="fas fa-users-cog"></i> User List</h2>
+                        <span id="userCount">Loading users...</span>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Last Login</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTable">
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 40px;">
+                                    <div class="loading-text">
+                                        <div class="spinner"></div> Loading users...
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 20px; text-align: center;">
+                        <button id="prevPageBtn" class="btn btn-outline" disabled>
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </button>
+                        <span style="margin: 0 15px; color: var(--text-secondary);">
+                            Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+                        </span>
+                        <button id="nextPageBtn" class="btn btn-outline" disabled>
+                            Next <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Statistics Tab -->
+            <div id="adminStats" class="tab-content">
+                <div class="stats-grid">
+                    <div class="stat-card stat-users">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-number" id="totalUsers">0</div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+                    
+                    <div class="stat-card stat-active">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <div class="stat-number" id="activeUsers">0</div>
+                        <div class="stat-label">Active Users</div>
+                    </div>
+                    
+                    <div class="stat-card stat-suspended">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-slash"></i>
+                        </div>
+                        <div class="stat-number" id="suspendedUsers">0</div>
+                        <div class="stat-label">Suspended Users</div>
+                    </div>
+                    
+                    <div class="stat-card stat-admins">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        <div class="stat-number" id="adminUsersCount">0</div>
+                        <div class="stat-label">Administrators</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h2><i class="fas fa-chart-bar"></i> User Activity</h2>
+                        <div class="chart-actions">
+                            <button class="chart-btn active" data-chart="daily">Daily</button>
+                            <button class="chart-btn" data-chart="weekly">Weekly</button>
+                            <button class="chart-btn" data-chart="monthly">Monthly</button>
+                        </div>
+                    </div>
+                    <canvas id="userActivityChart"></canvas>
+                    <div id="chartPlaceholder" class="chart-placeholder">
+                        <h3>No activity data available</h3>
+                        <p>User activity will appear here</p>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2><i class="fas fa-clock"></i> Recent Activity</h2>
+                        <button class="btn btn-outline" id="refreshActivityBtn">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>User</th>
+                                <th>Activity</th>
+                                <th>IP Address</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentActivityTable">
+                            <tr>
+                                <td colspan="4" style="text-align: center; padding: 40px;">
+                                    Loading activity...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Settings Tab -->
+            <div id="adminSettings" class="tab-content">
+                <div class="form-section">
+                    <h3><i class="fas fa-shield-alt"></i> Security Settings</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sessionTimeout">Session Timeout (minutes)</label>
+                            <input type="number" id="sessionTimeout" class="form-control" value="30" min="5" max="1440">
+                        </div>
+                        <div class="form-group">
+                            <label for="maxLoginAttempts">Max Login Attempts</label>
+                            <input type="number" id="maxLoginAttempts" class="form-control" value="5" min="1" max="10">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <div class="form-check" style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" id="enable2FA" class="form-control" style="width: 20px;">
+                                <label for="enable2FA">Enable Two-Factor Authentication for Admins</label>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn" id="saveSecuritySettings">
+                        <i class="fas fa-save"></i> Save Security Settings
+                    </button>
+                </div>
+                
+                <div class="form-section">
+                    <h3><i class="fas fa-bell"></i> Notification Settings</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <div class="form-check" style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" id="notifyNewUser" class="form-control" style="width: 20px;" checked>
+                                <label for="notifyNewUser">Notify on new user registration</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-check" style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" id="notifySuspicious" class="form-control" style="width: 20px;" checked>
+                                <label for="notifySuspicious">Notify on suspicious activity</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="adminEmail">Admin Notification Email</label>
+                            <input type="email" id="adminEmail" class="form-control" placeholder="admin@example.com">
+                        </div>
+                    </div>
+                    <button class="btn" id="saveNotificationSettings">
+                        <i class="fas fa-save"></i> Save Notification Settings
+                    </button>
+                </div>
+                
+                <div class="form-section">
+                    <h3><i class="fas fa-database"></i> Database Management</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <button class="btn btn-outline" id="backupDBBtn">
+                                <i class="fas fa-download"></i> Backup Database
+                            </button>
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-outline btn-danger" id="cleanupDBBtn">
+                                <i class="fas fa-broom"></i> Cleanup Old Data
+                            </button>
+                        </div>
+                    </div>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin-top: 15px;">
+                        <i class="fas fa-info-circle"></i> Database cleanup will remove activity logs older than 90 days.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Activity Logs Tab -->
+            <div id="adminLogs" class="tab-content">
+                <div class="form-section">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="logDate">Filter by Date</label>
+                            <input type="date" id="logDate" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="logUser">Filter by User</label>
+                            <input type="text" id="logUser" class="form-control" placeholder="Username">
+                        </div>
+                        <div class="form-group">
+                            <label for="logType">Filter by Type</label>
+                            <select id="logType" class="form-control">
+                                <option value="">All Types</option>
+                                <option value="login">Login</option>
+                                <option value="logout">Logout</option>
+                                <option value="create">User Created</option>
+                                <option value="update">User Updated</option>
+                                <option value="suspend">User Suspended</option>
+                                <option value="activate">User Activated</option>
+                                <option value="delete">User Deleted</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="align-self: flex-end;">
+                            <button class="btn" id="filterLogsBtn">
+                                <i class="fas fa-filter"></i> Filter
+                            </button>
+                            <button class="btn btn-outline" id="clearLogsFilterBtn" style="margin-left: 10px;">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2><i class="fas fa-scroll"></i> Activity Logs</h2>
+                        <button class="btn btn-danger" id="clearOldLogsBtn">
+                            <i class="fas fa-trash"></i> Clear Old Logs
+                        </button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>Details</th>
+                                <th>IP Address</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activityLogsTable">
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 40px;">
+                                    Loading activity logs...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 20px; text-align: center;">
+                        <button id="prevLogPageBtn" class="btn btn-outline" disabled>
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </button>
+                        <span style="margin: 0 15px; color: var(--text-secondary);">
+                            Page <span id="currentLogPage">1</span> of <span id="totalLogPages">1</span>
+                        </span>
+                        <button id="nextLogPageBtn" class="btn btn-outline" disabled>
+                            Next <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <footer class="app-footer">
+                <p>© 2025 Crypto Porto Admin Panel | Version 1.0.0 | Logged in as: <span id="currentAdmin">Loading...</span></p>
+            </footer>
+        </div>
+    </div>
+
+    <!-- User Detail Modal -->
+    <div id="userDetailModal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-circle"></i> User Details</h2>
+                <button class="close-modal" id="closeUserModal">&times;</button>
+            </div>
+            <div id="userDetailContent">
+                <!-- User details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="adminNotificationContainer"></div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDhk6lT-XBaC-Gy7AlewziPDpFHG9v_emg",
+            authDomain: "porto-crypto.firebaseapp.com",
+            projectId: "porto-crypto",
+            storageBucket: "porto-crypto.appspot.com",
+            messagingSenderId: "203252097748",
+            appId: "1:203252097748:web:d7f33f473f7e1f4f0f9141"
+        };
+
+        // Initialize Firebase
+        let firebaseApp, db, currentAdmin = null;
+        let currentUser = null;
+        
+        try {
+            firebaseApp = firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            console.log("✅ Firebase Connected!");
+        } catch (error) {
+            console.error("❌ Firebase Error:", error);
+        }
+
+        // ==================== UTILITY FUNCTIONS ====================
+        
+        function showAlert(message, type, containerId = 'alertContainer') {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => { container.innerHTML = ''; }, 4000);
+        }
+        
+        function showAdminNotification(message, type = 'info') {
+            const container = document.getElementById('adminNotificationContainer');
+            const notification = document.createElement('div');
+            notification.className = `admin-notification ${type} show`;
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                    <div>${message}</div>
+                </div>
+            `;
+            container.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return 'Never';
+            const date = new Date(dateString);
+            return date.toLocaleString('id-ID', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        function formatRelativeTime(dateString) {
+            if (!dateString) return 'Never';
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins} minutes ago`;
+            if (diffHours < 24) return `${diffHours} hours ago`;
+            if (diffDays < 7) return `${diffDays} days ago`;
+            return formatDate(dateString);
+        }
+
+        // ==================== SESSION MANAGEMENT ====================
+        
+        // Save session to localStorage
+        function saveSession(userData) {
+            localStorage.setItem('cryptoPortoSession', JSON.stringify({
+                user: userData,
+                timestamp: Date.now(),
+                expiry: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+            }));
+        }
+        
+        // Get session from localStorage
+        function getSession() {
+            const sessionData = localStorage.getItem('cryptoPortoSession');
+            if (!sessionData) return null;
+            
+            const session = JSON.parse(sessionData);
+            // Check if session is expired
+            if (Date.now() > session.expiry) {
+                clearSession();
+                return null;
+            }
+            
+            return session;
+        }
+        
+        // Clear session from localStorage
+        function clearSession() {
+            localStorage.removeItem('cryptoPortoSession');
+        }
+        
+        // Check and restore session on page load
+        async function checkAndRestoreSession() {
+            const session = getSession();
+            if (!session) {
+                console.log("No valid session found");
+                return;
+            }
+            
+            try {
+                // Validate user with Firestore
+                const userDoc = await db.collection('users').doc(session.user.id).get();
+                if (!userDoc.exists) {
+                    clearSession();
+                    showAlert('Session expired. Please login again.', 'error');
+                    return;
+                }
+                
+                const userData = userDoc.data();
+                
+                if (userData.status !== 'active') {
+                    clearSession();
+                    showAlert('Your account is no longer active. Please contact administrator.', 'error');
+                    return;
+                }
+                
+                // Update online status
+                await db.collection('users').doc(session.user.id).update({
+                    lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                    online: true
+                });
+                
+                // Log activity
+                await db.collection('activity_logs').add({
+                    userId: session.user.id,
+                    username: userData.username,
+                    action: 'login',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    details: 'User logged in via session restoration',
+                    ipAddress: 'N/A'
+                });
+                
+                // Restore user session
+                currentUser = {
+                    id: session.user.id,
+                    username: userData.username,
+                    role: userData.role,
+                    email: userData.email || 'N/A'
+                };
+                
+                console.log("✅ Session restored for user:", currentUser.username);
+                
+                // Redirect to appropriate page
+                if (userData.role === 'admin') {
+                    currentAdmin = currentUser;
+                    document.getElementById('loginPage').classList.add('hidden');
+                    document.getElementById('adminPanel').classList.remove('hidden');
+                    document.getElementById('portfolioPage').classList.add('hidden');
+                    initializeAdminPanel();
+                } else {
+                    document.getElementById('loginPage').classList.add('hidden');
+                    document.getElementById('portfolioPage').classList.remove('hidden');
+                    document.getElementById('adminPanel').classList.add('hidden');
+                    initializePortfolio();
+                }
+                
+            } catch (error) {
+                console.error("Error restoring session:", error);
+                clearSession();
+            }
+        }
+        
+        // ==================== LOGIN SYSTEM ====================
+        
+        async function handleUserLogin() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (!username || !password) {
+                showAlert('Please enter both username and password!', 'error');
+                return;
+            }
+
+            try {
+                const querySnapshot = await db.collection('users')
+                    .where('username', '==', username)
+                    .limit(1)
+                    .get();
+
+                if (querySnapshot.empty) {
+                    showAlert('User not found! Please check your username.', 'error');
+                    return;
+                }
+
+                const userDoc = querySnapshot.docs[0];
+                const userData = userDoc.data();
+                
+                if (userData.password !== password) {
+                    showAlert('Incorrect password! Please try again.', 'error');
+                    return;
+                }
+                
+                if (userData.status !== 'active') {
+                    showAlert('Your account is not active. Please contact administrator.', 'error');
+                    return;
+                }
+                
+                // Log activity
+                await db.collection('activity_logs').add({
+                    userId: userDoc.id,
+                    username: userData.username,
+                    action: 'login',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    details: 'User logged in successfully',
+                    ipAddress: 'N/A'
+                });
+                
+                await db.collection('users').doc(userDoc.id).update({
+                    lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                    online: true
+                });
+                
+                showAlert('Login successful! Redirecting...', 'success');
+                
+                currentUser = {
+                    id: userDoc.id,
+                    username: userData.username,
+                    role: userData.role,
+                    email: userData.email || 'N/A'
+                };
+                
+                // Save session to localStorage
+                saveSession(currentUser);
+                
+                if (userData.role === 'admin') {
+                    currentAdmin = currentUser;
+                    setTimeout(() => {
+                        document.getElementById('loginPage').classList.add('hidden');
+                        document.getElementById('adminPanel').classList.remove('hidden');
+                        document.getElementById('portfolioPage').classList.add('hidden');
+                        initializeAdminPanel();
+                    }, 1000);
+                } else {
+                    setTimeout(() => {
+                        document.getElementById('loginPage').classList.add('hidden');
+                        document.getElementById('portfolioPage').classList.remove('hidden');
+                        document.getElementById('adminPanel').classList.add('hidden');
+                        initializePortfolio();
+                    }, 1000);
+                }
+                
+            } catch (error) {
+                console.error("Login error:", error);
+                showAlert(`Login failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // ==================== PORTO V4 FUNCTIONALITY ====================
+        
+        let portfolioInitialized = false;
+        
+        function initializePortfolio() {
+            if (portfolioInitialized) return;
+            portfolioInitialized = true;
+            
+            // Currency locales for formatting
+            const currencyLocales = {
+                'IDR': 'id-ID',
+                'USD': 'en-US',
+                'EUR': 'en-US',
+                'GBP': 'en-GB',
+                'JPY': 'ja-JP',
+                'AUD': 'en-AU',
+                'CAD': 'en-CA',
+                'CHF': 'de-CH',
+                'SEK': 'sv-SE',
+                'NOK': 'no-NO'
+            };
+
+            // Function to format currency based on selected currency
+            function formatCurrency(amount) {
+                const locale = currencyLocales[selectedCurrency] || 'en-US';
+                const formatter = new Intl.NumberFormat(locale, { style: 'currency', currency: selectedCurrency });
+                return formatter.format(Math.round(amount));
+            }
+
+            // Global variables for portfolio
+            let transactions = [];
+            let previousPrices = {};
+            let currentPrices = {};
+            let hourlyChanges = {};
+            let performanceChart = null;
+            let chartType = 'value';
+            let lastSuccessfulUpdate = 0;
+            let currentApi = 'CoinGecko';
+            let apiStatus = 'live';
+            let selectedCoin = '';
+            let selectedCoinForPrice = 'BTC'; // Default coin for price display
+            let selectedCurrency = 'IDR'; // Default currency
+
+            // Coin data (will be populated from CoinGecko)
+            let coins = [];
+
+            // Daftar fallback coins untuk koin-koin baru
+            const fallbackCoins = [
+                { id: 'zora', symbol: 'ZORA', name: 'Zora', logo: 'https://via.placeholder.com/30x30/2a2b36/ffffff?text=Z' },
+                { id: 'troll-solana', symbol: 'TROLLSOL', name: 'Troll Solana', logo: 'https://via.placeholder.com/30x30/2a2b36/ffffff?text=T' },
+                { id: 'jelly-jelly', symbol: 'JELLYJELLY', name: 'Jelly Jelly', logo: 'https://via.placeholder.com/30x30/2a2b36/ffffff?text=J' },
+                { id: 'moonpig', symbol: 'MOONPIG', name: 'MoonPig', logo: 'https://via.placeholder.com/30x30/2a2b36/ffffff?text=M' },
+                { id: 'ethena', symbol: 'ENA', name: 'Ethena', logo: 'https://via.placeholder.com/30x30/2a2b36/ffffff?text=E' },
+                { id: 'pengu', symbol: 'PENGU', name: 'Pengu', logo: 'https://via.placeholder.com/30x30/2a2b36/ffffff?text=P' }
+            ];
+
+            // Show admin access button if user is admin
+            if (currentUser && currentUser.role === 'admin') {
+                document.getElementById('adminAccessBtn').style.display = 'block';
+                document.getElementById('adminAccessBtn').addEventListener('click', () => {
+                    document.getElementById('portfolioPage').classList.add('hidden');
+                    document.getElementById('adminPanel').classList.remove('hidden');
+                    initializeAdminPanel();
+                });
+            }
+
+            // Theme toggle functionality
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIcon = themeToggle.querySelector('i');
+            
+            const updateThemeIcon = () => {
+                const isLightTheme = document.body.classList.contains('light-theme');
+                themeIcon.className = isLightTheme ? 'fas fa-sun' : 'fas fa-moon';
+            };
+            
+            const storedTheme = localStorage.getItem('theme') || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+            if (storedTheme === 'light') {
+                document.body.classList.add('light-theme');
+            }
+            updateThemeIcon();
+            
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('light-theme');
+                updateThemeIcon();
+                localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+            });
+
+            // Fungsi untuk menghitung saldo koin
+            function getCoinBalance(coinSymbol) {
+                const buyTransactions = transactions.filter(tx => 
+                    tx.coin === coinSymbol && tx.type === 'buy'
+                );
+                const sellTransactions = transactions.filter(tx => 
+                    tx.coin === coinSymbol && tx.type === 'sell'
+                );
+                
+                const totalBought = buyTransactions.reduce((sum, tx) => sum + tx.quantity, 0);
+                const totalSold = sellTransactions.reduce((sum, tx) => sum + tx.quantity, 0);
+                
+                return totalBought - totalSold;
+            }
+
+            // Update balance info when coin or type changes
+            function updateBalanceInfo() {
+                const coinSelect = document.getElementById('coin');
+                const typeSelect = document.getElementById('type');
+                const balanceInfo = document.getElementById('balanceInfo');
+                
+                const selectedCoin = coinSelect.value;
+                const selectedType = typeSelect.value;
+                
+                if (selectedCoin && selectedType === 'sell') {
+                    const balance = getCoinBalance(selectedCoin);
+                    const coin = coins.find(c => c.symbol === selectedCoin);
+                    balanceInfo.style.display = 'block';
+                    balanceInfo.innerHTML = `
+                        <i class="fas fa-info-circle"></i> 
+                        Current ${coin ? coin.name : selectedCoin} balance: 
+                        <strong>${balance.toFixed(8)}</strong>
+                        ${coin ? coin.symbol : ''}
+                    `;
+                } else {
+                    balanceInfo.style.display = 'none';
+                }
+            }
+
+            // Load transactions from localStorage
+            function loadTransactions() {
+                const savedTransactions = localStorage.getItem('cryptoTransactions');
+                if (savedTransactions) {
+                    transactions = JSON.parse(savedTransactions);
+                    updateCoinSelector();
+                    updateTransactionTable();
+                    updateDashboard();
+                }
+            }
+
+            // Save transactions to localStorage
+            function saveTransactions() {
+                localStorage.setItem('cryptoTransactions', JSON.stringify(transactions));
+                updateCoinSelector();
+                updateDashboard();
+            }
+
+            // Update coin selector chips
+            function updateCoinSelector() {
+                const coinSelector = document.getElementById('coinSelector');
+                coinSelector.innerHTML = '';
+                // Get unique coins from transactions
+                const uniqueCoins = [...new Set(transactions.map(tx => tx.coin))];
+                if (uniqueCoins.length === 0) {
+                    coinSelector.innerHTML = '<p>No coins in portfolio yet</p>';
+                    return;
+                }
+                // Add "All" chip
+                const allChip = document.createElement('div');
+                allChip.className = `coin-chip ${selectedCoin === '' ? 'active' : ''}`;
+                allChip.innerHTML = '<i class="fas fa-coins"></i> All Coins';
+                allChip.addEventListener('click', () => {
+                    selectedCoin = '';
+                    updateCoinSelector();
+                    updateDashboard();
+                });
+                coinSelector.appendChild(allChip);
+                // Add chips for each coin
+                uniqueCoins.forEach(symbol => {
+                    const coin = coins.find(c => c.symbol === symbol);
+                    if (!coin) return;
+                    const chip = document.createElement('div');
+                    chip.className = `coin-chip ${selectedCoin === symbol ? 'active' : ''}`;
+                    chip.innerHTML = `
+                        <img src="${coin.logo}" alt="${coin.name}" class="coin-logo">
+                        ${coin.name} (${coin.symbol})
+                    `;
+                    chip.addEventListener('click', () => {
+                        selectedCoin = symbol;
+                        updateCoinSelector();
+                        updateDashboard();
+                    });
+                    coinSelector.appendChild(chip);
+                });
+            }
+
+            // Fetch coin list from CoinGecko
+            async function fetchCoinList() {
+                const cacheKey = 'coinList';
+                const cacheExpiry = 60 * 60 * 1000; // 1 hour
+                const cachedData = localStorage.getItem(cacheKey);
+                const now = Date.now();
+                // Show loading state in dropdowns
+                const priceSelector = document.getElementById('priceCoinSelector');
+                const coinSelector = document.getElementById('coin');
+                priceSelector.innerHTML = '<option value="">Loading coins...</option>';
+                coinSelector.innerHTML = '<option value="">Loading coins...</option>';
+                // Try to use cached data if valid
+                if (cachedData) {
+                    const { data, timestamp } = JSON.parse(cachedData);
+                    if (now - timestamp < cacheExpiry) {
+                        coins = data;
+                        populateCoinDropdowns();
+                        return;
+                    }
+                }
+                try {
+                    const response = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=${selectedCurrency.toLowerCase()}&order=market_cap_desc&per_page=250&page=1&sparkline=false`);
+                    const coinData = await response.json();
+                    // Map data to our coin structure
+                    coins = coinData.map(coin => ({
+                        id: coin.id,
+                        symbol: coin.symbol.toUpperCase(),
+                        name: coin.name,
+                        logo: coin.image
+                    }));
+                    // Add fallback coins if they don't exist in the API response
+                    for (const fallbackCoin of fallbackCoins) {
+                        if (!coins.some(c => c.symbol === fallbackCoin.symbol)) {
+                            coins.push(fallbackCoin);
+                        }
+                    }
+                    // Save to localStorage
+                    localStorage.setItem(cacheKey, JSON.stringify({ data: coins, timestamp: now }));
+                    // Populate dropdowns
+                    populateCoinDropdowns();
+                } catch (error) {
+                    console.error('Failed to fetch coin list:', error);
+                    // Fallback to default coins if available
+                    if (cachedData) {
+                        const { data } = JSON.parse(cachedData);
+                        coins = data;
+                        populateCoinDropdowns();
+                    } else {
+                        // Use fallback coins as last resort
+                        coins = [
+                            // Popular coins
+                            { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', logo: 'https://coin-images.coingecko.com/coins/images/1/small/bitcoin.png' },
+                            { id: 'ethereum', symbol: 'ETH', name: 'Ethereum', logo: 'https://coin-images.coingecko.com/coins/images/279/small/ethereum.png' },
+                            { id: 'binancecoin', symbol: 'BNB', name: 'Binance Coin', logo: 'https://coin-images.coingecko.com/coins/images/825/small/bnb-icon2_2x.png' },
+                            // Add the requested coins
+                            ...fallbackCoins
+                        ];
+                        populateCoinDropdowns();
+                    }
+                }
+            }
+
+            // Populate coin dropdowns
+            function populateCoinDropdowns() {
+                const priceSelector = document.getElementById('priceCoinSelector');
+                const coinSelector = document.getElementById('coin');
+                // Clear dropdowns
+                priceSelector.innerHTML = '';
+                coinSelector.innerHTML = '';
+                // Add default option
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'Select Coin';
+                priceSelector.appendChild(defaultOption);
+                coinSelector.appendChild(defaultOption.cloneNode(true));
+                // Add coins to dropdowns
+                coins.forEach(coin => {
+                    const priceOption = document.createElement('option');
+                    priceOption.value = coin.symbol;
+                    priceOption.textContent = `${coin.name} (${coin.symbol})`;
+                    priceSelector.appendChild(priceOption);
+                    const coinOption = document.createElement('option');
+                    coinOption.value = coin.symbol;
+                    coinOption.textContent = `${coin.name} (${coin.symbol})`;
+                    coinSelector.appendChild(coinOption);
+                });
+                // Set default selected coin
+                priceSelector.value = selectedCoinForPrice;
+            }
+
+            // Enhanced price fetching with multiple endpoints
+            async function fetchPriceWithRetry(maxRetries = 3, delayMs = 1000) {
+                const endpoints = [
+                    {
+                        name: 'CoinGecko',
+                        url: `https://api.coingecko.com/api/v3/simple/price?ids=${coins.map(c => c.id).join(',')}&vs_currencies=${selectedCurrency.toLowerCase()}&include_24hr_change=true`,
+                        handler: async (response) => {
+                            const data = await response.json();
+                            const prices = {};
+                            const changes = {};
+                            coins.forEach(coin => {
+                                const vsCurr = selectedCurrency.toLowerCase();
+                                if (data[coin.id] && data[coin.id][vsCurr]) {
+                                    prices[coin.symbol] = data[coin.id][vsCurr];
+                                    // Get 24-hour percentage change
+                                    if (data[coin.id][`${vsCurr}_24h_change`]) {
+                                        changes[coin.symbol] = data[coin.id][`${vsCurr}_24h_change`];
+                                    }
+                                } else {
+                                    prices[coin.symbol] = currentPrices[coin.symbol] || 0;
+                                }
+                            });
+                            return { prices, changes };
+                        }
+                    },
+                    {
+                        name: 'Binance',
+                        url: 'https://api.binance.com/api/v3/ticker/price',
+                        handler: async (response) => {
+                            const data = await response.json();
+                            const prices = {};
+                            const currUpper = selectedCurrency.toUpperCase();
+                            data.forEach(item => {
+                                if (item.symbol.endsWith(currUpper)) {
+                                    const symbol = item.symbol.replace(currUpper, '');
+                                    if (coins.some(c => c.symbol === symbol)) {
+                                        prices[symbol] = parseFloat(item.price);
+                                    }
+                                }
+                            });
+                            coins.forEach(coin => {
+                                if (!(coin.symbol in prices)) {
+                                    prices[coin.symbol] = currentPrices[coin.symbol] || 0;
+                                }
+                            });
+                            return { prices, changes: {} };
+                        }
+                    }
+                ];
+                for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                    for (const endpoint of endpoints) {
+                        try {
+                            const response = await fetch(endpoint.url);
+                            if (!response.ok) continue;
+                            const result = await endpoint.handler(response);
+                            if (Object.keys(result.prices).length > 0) {
+                                currentApi = endpoint.name;
+                                apiStatus = 'live';
+                                return result;
+                            }
+                        } catch (error) {
+                            console.log(`Failed to fetch from ${endpoint.name}: ${error.message}`);
+                        }
+                    }
+                    if (attempt < maxRetries) {
+                        await new Promise(resolve => setTimeout(resolve, delayMs));
+                    }
+                }
+                currentApi = 'Fallback';
+                apiStatus = 'fallback';
+                const fallbackPrices = { ...currentPrices };
+                return { prices: fallbackPrices, changes: {} };
+            }
+
+            // Update transaction table
+            function updateTransactionTable() {
+                let totalValue = 0, totalPNL = 0, totalInvestment = 0;
+                const tableBody = document.getElementById('transactionTable');
+                tableBody.innerHTML = '';
+                
+                // Filter transactions by selected coin
+                const filteredTransactions = selectedCoin ? 
+                    transactions.filter(tx => tx.coin === selectedCoin) : 
+                    transactions.filter(tx => tx.type === 'buy');
+                
+                if (filteredTransactions.length === 0) {
+                    const row = tableBody.insertRow();
+                    const cell = row.insertCell(0);
+                    cell.colSpan = 11;
+                    cell.textContent = 'No transactions yet. Add some transactions to get started.';
+                    cell.style.textAlign = 'center';
+                    cell.style.color = 'var(--text-secondary)';
+                    return;
+                }
+
+                filteredTransactions.forEach(tx => {
+                    const coin = coins.find(c => c.symbol === tx.coin);
+                    const currentPrice = currentPrices[tx.coin] || 0;
+                    const currentValue = tx.quantity * currentPrice;
+                    const pnl = currentValue - (tx.quantity * tx.price);
+                    const pnlPercentage = ((currentPrice - tx.price) / tx.price * 100).toFixed(2);
+                    
+                    totalValue += currentValue;
+                    totalPNL += pnl;
+                    totalInvestment += tx.quantity * tx.price;
+                    
+                    const row = tableBody.insertRow();
+                    row.insertCell(0).textContent = tx.date;
+                    if (coin) {
+                        row.insertCell(1).innerHTML = `<img src="${coin.logo}" alt="${coin.name} Logo" class="coin-logo">`;
+                    } else {
+                        row.insertCell(1).textContent = '';
+                    }
+                    row.insertCell(2).textContent = coin ? coin.name : tx.coin;
+                    row.insertCell(3).textContent = tx.coin;
+                    row.insertCell(4).innerHTML = `<span class="transaction-type-${tx.type}">${tx.type.toUpperCase()}</span>`;
+                    row.insertCell(5).textContent = formatCurrency(tx.quantity * tx.price);
+                    row.insertCell(6).textContent = formatCurrency(tx.price);
+                    row.insertCell(7).textContent = tx.quantity.toLocaleString('en-US', { maximumFractionDigits: 7 });
+                    row.insertCell(8).textContent = formatCurrency(currentValue);
+                    row.insertCell(9).textContent = `${pnlPercentage}%`;
+                    row.insertCell(10).textContent = pnl < 0 ? `(${formatCurrency(Math.abs(pnl))})` : `+${formatCurrency(pnl)}`;
+                    row.cells[10].className = pnl < 0 ? 'negative' : 'positive';
+                });
+
+                document.getElementById('totalValue').textContent = formatCurrency(totalValue);
+                const totalProfitPercentage = totalInvestment > 0 ? (totalPNL / totalInvestment * 100).toFixed(2) : 0;
+                document.getElementById('totalProfitPercentage').textContent = `${totalProfitPercentage}%`;
+                document.getElementById('totalPNLValue').textContent = totalPNL < 0 ? 
+                    `(${formatCurrency(Math.abs(totalPNL))})` : `+${formatCurrency(totalPNL)}`;
+                document.getElementById('totalPNLValue').className = totalPNL < 0 ? 'negative' : 'positive';
+            }
+
+            // Update dashboard
+            function updateDashboard() {
+                if (transactions.length === 0) {
+                    document.getElementById('totalInvestment').textContent = formatCurrency(0);
+                    document.getElementById('currentValue').textContent = formatCurrency(0);
+                    document.getElementById('profitLoss').textContent = formatCurrency(0);
+                    document.getElementById('bestPerformer').textContent = '-';
+                    document.getElementById('profitPercentage').textContent = '0%';
+                    document.getElementById('averagePrice').textContent = '-';
+                    updatePerformanceChart([]);
+                    updateRecentTransactions([]);
+                    return;
+                }
+                // Filter transactions by selected coin
+                const filteredTransactions = selectedCoin ? transactions.filter(tx => tx.coin === selectedCoin) : transactions;
+                // Calculate portfolio metrics
+                const coinsData = {};
+                filteredTransactions.forEach(tx => {
+                    if (!coinsData[tx.coin]) {
+                        const coin = coins.find(c => c.symbol === tx.coin);
+                        coinsData[tx.coin] = {
+                            symbol: tx.coin,
+                            name: coin ? coin.name : tx.coin,
+                            logo: coin ? coin.logo : '',
+                            totalBought: 0,
+                            totalSold: 0,
+                            totalInvested: 0,
+                            totalValue: 0,
+                            pnl: 0
+                        };
+                    }
+                    const data = coinsData[tx.coin];
+                    if (tx.type === 'buy') {
+                        data.totalBought += tx.quantity;
+                        data.totalInvested += tx.quantity * tx.price;
+                    } else {
+                        data.totalSold += tx.quantity;
+                    }
+                });
+                // Calculate current values
+                let totalPortfolioValue = 0;
+                let totalInvestment = 0;
+                let totalPNL = 0;
+                let bestPerformer = { symbol: '', pnlPercentage: -Infinity };
+                Object.keys(coinsData).forEach(symbol => {
+                    const data = coinsData[symbol];
+                    const currentPrice = currentPrices[symbol] || 0;
+                    const holdings = data.totalBought - data.totalSold;
+                    data.totalValue = holdings * currentPrice;
+                    data.pnl = data.totalValue - data.totalInvested;
+                    const pnlPercentage = data.totalInvested > 0 ? (data.pnl / data.totalInvested) * 100 : 0;
+                    if (pnlPercentage > bestPerformer.pnlPercentage) {
+                        bestPerformer = { symbol, pnlPercentage };
+                    }
+                    totalPortfolioValue += data.totalValue;
+                    totalInvestment += data.totalInvested;
+                    totalPNL += data.pnl;
+                });
+                // Update card values
+                document.getElementById('totalInvestment').textContent = formatCurrency(totalInvestment);
+                document.getElementById('currentValue').textContent = formatCurrency(totalPortfolioValue);
+                document.getElementById('profitLoss').textContent = totalPNL < 0 ? `(${formatCurrency(Math.abs(totalPNL))})` : `+${formatCurrency(totalPNL)}`;
+                // Update best performer
+                if (bestPerformer.symbol) {
+                    const coin = coins.find(c => c.symbol === bestPerformer.symbol);
+                    if (coin) {
+                        document.getElementById('bestPerformer').innerHTML = `
+                            <div class="coin-details">
+                                <img src="${coin.logo}" alt="${coin.name}" class="coin-logo">
+                                ${coin.symbol}: ${bestPerformer.pnlPercentage.toFixed(2)}%
+                            </div>
+                        `;
+                    }
+                }
+                document.getElementById('profitPercentage').textContent = `${((totalPNL / totalInvestment * 100) || 0).toFixed(2)}%`;
+                // Update average price (only for single selected coin)
+                if (selectedCoin) {
+                    const data = coinsData[selectedCoin];
+                    if (data && data.totalBought > 0) {
+                        const average = data.totalInvested / data.totalBought;
+                        document.getElementById('averagePrice').textContent = formatCurrency(average);
+                    } else {
+                        document.getElementById('averagePrice').textContent = '-';
+                    }
+                } else {
+                    document.getElementById('averagePrice').textContent = '-';
+                }
+                // Update dashboard price display
+                const dashboardPriceDisplay = document.getElementById('dashboardPriceValue');
+                const dashboardPriceIndicator = document.getElementById('dashboardPriceIndicator');
+                dashboardPriceDisplay.textContent = formatCurrency(totalPortfolioValue);
+                dashboardPriceIndicator.textContent = totalPNL >= 0 ? '↑' : '↓';
+                dashboardPriceIndicator.className = totalPNL >= 0 ? 'price-indicator positive' : 'price-indicator negative';
+                // Update performance chart and recent transactions
+                updatePerformanceChart(filteredTransactions);
+                updateRecentTransactions(filteredTransactions);
+            }
+
+            // Update recent transactions table
+            function updateRecentTransactions(transactions) {
+                const recentTransactionsEl = document.getElementById('recentTransactions').querySelector('tbody');
+                recentTransactionsEl.innerHTML = '';
+                // Show last 5 transactions (most recent first)
+                const recent = [...transactions].reverse().slice(0, 5);
+                if (recent.length === 0) {
+                    const row = recentTransactionsEl.insertRow();
+                    const cell = row.insertCell(0);
+                    cell.colSpan = 6;
+                    cell.textContent = 'No transactions yet';
+                    cell.style.textAlign = 'center';
+                    cell.style.color = 'var(--text-secondary)';
+                    return;
+                }
+                recent.forEach(tx => {
+                    const coin = coins.find(c => c.symbol === tx.coin);
+                    const row = recentTransactionsEl.insertRow();
+                    const value = tx.quantity * tx.price;
+                    row.insertCell(0).textContent = tx.date;
+                    if (coin) {
+                        row.insertCell(1).innerHTML = `<img src="${coin.logo}" alt="${tx.coin}" class="coin-logo"> ${tx.coin}`;
+                    } else {
+                        row.insertCell(1).textContent = tx.coin;
+                    }
+                    row.insertCell(2).innerHTML = tx.type === 'buy' ? 
+                        `<span class="transaction-type-buy">BUY</span>` : 
+                        `<span class="transaction-type-sell">SELL</span>`;
+                    row.insertCell(3).textContent = formatCurrency(tx.price);
+                    row.insertCell(4).textContent = tx.quantity.toFixed(6);
+                    row.insertCell(5).textContent = formatCurrency(value);
+                });
+            }
+
+            // Create or update performance chart
+            function updatePerformanceChart(transactions) {
+                const ctx = document.getElementById('performanceChart');
+                const placeholder = document.getElementById('chartPlaceholder');
+                // Clear existing chart if it exists
+                if (performanceChart) {
+                    performanceChart.destroy();
+                    performanceChart = null;
+                }
+                // If no transactions, show placeholder
+                if (transactions.length === 0) {
+                    ctx.style.display = 'none';
+                    placeholder.style.display = 'block';
+                    return;
+                }
+                // Hide placeholder
+                ctx.style.display = 'block';
+                    placeholder.style.display = 'none';
+                // Sort transactions by date
+                const sortedTransactions = [...transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
+                // Calculate cumulative values
+                let cumulativeValue = 0;
+                let cumulativeInvestment = 0;
+                const dates = [];
+                const valueData = [];
+                const investmentData = [];
+                // Process each transaction and calculate cumulative values
+                sortedTransactions.forEach(tx => {
+                    if (tx.type === 'buy') {
+                        cumulativeInvestment += tx.quantity * tx.price;
+                    }
+                    // Calculate current value for this transaction
+                    const currentPrice = currentPrices[tx.coin] || 0;
+                    cumulativeValue = 0; // Recalculate total value for all transactions up to this point
+                    const transactionsUntilNow = sortedTransactions.filter(t => new Date(t.date) <= new Date(tx.date));
+                    transactionsUntilNow.forEach(t => {
+                        const price = currentPrices[t.coin] || 0;
+                        if (t.type === 'buy') {
+                            cumulativeValue += t.quantity * price;
+                        } else {
+                            cumulativeValue -= t.quantity * price;
+                        }
+                    });
+                    dates.push(tx.date);
+                    valueData.push(cumulativeValue);
+                    investmentData.push(cumulativeInvestment);
+                });
+                // Create chart
+                performanceChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Portfolio Value',
+                            data: valueData,
+                            backgroundColor: 'rgba(78, 205, 196, 0.2)',
+                            borderColor: '#4ecdc4',
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#4ecdc4',
+                            tension: 0.3,
+                            fill: true
+                        }, {
+                            label: 'Total Investment',
+                            data: investmentData,
+                            backgroundColor: 'rgba(255, 107, 107, 0.2)',
+                            borderColor: '#ff6b6b',
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#ff6b6b',
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: 'Value'
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return formatCurrency(value);
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        label += formatCurrency(context.parsed.y);
+                                        return label;
+                                    }
+                                }
+                            },
+                            legend: {
+                                position: 'top',
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Update prices with enhanced logic
+            async function updatePrices() {
+                try {
+                    const result = await fetchPriceWithRetry();
+                    const fetchedPrices = result.prices;
+                    hourlyChanges = result.changes;
+                    // Update API status display
+                    const apiStatusEl = document.getElementById('apiStatus');
+                    apiStatusEl.textContent = `via ${currentApi}`;
+                    apiStatusEl.className = 'api-status ' + (apiStatus === 'live' ? 'live' : apiStatus === 'fallback' ? 'fallback' : 'error');
+                    // Update price values
+                    Object.keys(fetchedPrices).forEach(symbol => {
+                        previousPrices[symbol] = currentPrices[symbol];
+                        currentPrices[symbol] = fetchedPrices[symbol];
+                    });
+                    lastSuccessfulUpdate = Date.now();
+                    // Update displays
+                    updatePriceDisplay();
+                    updateTransactionTable();
+                    updateDashboard();
+                } catch (error) {
+                    console.error('Error fetching prices:', error.message);
+                    // Update status to error
+                    const apiStatusEl = document.getElementById('apiStatus');
+                    apiStatusEl.textContent = 'Error';
+                    apiStatusEl.className = 'api-status error';
+                    updateTransactionTable();
+                    updateDashboard();
+                }
+            }
+
+            // Update the price display for the selected coin
+            function updatePriceDisplay() {
+                const priceDisplay = document.getElementById('priceDisplay');
+                const priceIndicator = document.getElementById('priceIndicator');
+                const hourChangeEl = document.getElementById('hourChange');
+                if (!selectedCoinForPrice) {
+                    priceDisplay.textContent = 'Select a coin';
+                    priceIndicator.textContent = '';
+                    hourChangeEl.textContent = '';
+                    return;
+                }
+                const currentPrice = currentPrices[selectedCoinForPrice] || 0;
+                const previousPrice = previousPrices[selectedCoinForPrice] || 0;
+                priceDisplay.textContent = formatCurrency(currentPrice);
+                if (previousPrice) {
+                    if (currentPrice > previousPrice) {
+                        priceIndicator.textContent = '↑';
+                        priceIndicator.className = 'price-indicator positive';
+                    } else if (currentPrice < previousPrice) {
+                        priceIndicator.textContent = '↓';
+                        priceIndicator.className = 'price-indicator negative';
+                    } else {
+                        priceIndicator.textContent = '→';
+                        priceIndicator.className = 'price-indicator';
+                    }
+                } else {
+                    priceIndicator.textContent = '';
+                }
+                // Update 24-hour change display
+                if (hourlyChanges[selectedCoinForPrice] !== undefined) {
+                    const change = hourlyChanges[selectedCoinForPrice];
+                    hourChangeEl.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}% (24h)`;
+                    hourChangeEl.className = `hour-change ${change >= 0 ? 'positive' : 'negative'}`;
+                } else {
+                    hourChangeEl.textContent = '';
+                }
+            }
+
+            // Tab switching functionality
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Remove active class from all tabs and contents
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    // Add active class to clicked tab and corresponding content
+                    tab.classList.add('active');
+                    const tabId = tab.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                    // Update dashboard when switching to it
+                    if (tabId === 'dashboard') {
+                        updateDashboard();
+                    }
+                });
+            });
+
+            // Single transaction form submission
+            document.getElementById('transactionForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const date = document.getElementById('date').value;
+                const coin = document.getElementById('coin').value;
+                const type = document.getElementById('type').value;
+                const price = parseFloat(document.getElementById('price').value);
+                const modalBeli = parseFloat(document.getElementById('modalBeli').value);
+                
+                if (!coin) {
+                    alert('Please select a coin');
+                    return;
+                }
+                
+                if (price && modalBeli) {
+                    const quantity = modalBeli / price;
+                    
+                    // VALIDASI: Untuk transaksi sell, pastikan punya cukup koin
+                    if (type === 'sell') {
+                        const currentBalance = getCoinBalance(coin);
+                        if (quantity > currentBalance) {
+                            alert(`You cannot sell more than your current balance! \nCurrent ${coin} balance: ${currentBalance.toFixed(8)}\nAttempting to sell: ${quantity.toFixed(8)}`);
+                            return;
+                        }
+                    }
+                    
+                    transactions.push({ date, coin, type, quantity, price, modalBeli });
+                    saveTransactions();
+                    document.getElementById('transactionForm').reset();
+                    updatePrices();
+                    updateBalanceInfo();
+                }
+            });
+
+            // Batch transaction form submission
+            document.getElementById('batchTransactionForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const batchInput = document.getElementById('batchInput').value.trim();
+                const batchError = document.getElementById('batchError');
+                batchError.textContent = '';
+                
+                if (!batchInput) {
+                    batchError.textContent = 'Please enter at least one transaction.';
+                    return;
+                }
+                
+                const lines = batchInput.split('\n');
+                let validTransactions = [];
+                let errorMessages = [];
+                
+                // Hitung saldo sementara untuk validasi
+                const tempBalances = {};
+                
+                lines.forEach((line, index) => {
+                    const parts = line.split(',').map(item => item.trim());
+                    if (parts.length !== 5) {
+                        errorMessages.push(`Line ${index + 1}: Invalid format. Expected: date,coin,type,price,modalBeli`);
+                        return;
+                    }
+                    
+                    const [date, coin, type, priceStr, modalBeliStr] = parts;
+                    const price = parseFloat(priceStr);
+                    const modalBeli = parseFloat(modalBeliStr);
+                    
+                    // Validate inputs
+                    if (!/^\d{4}-\d{2}-\d{2}/.test(date)) {
+                        errorMessages.push(`Line ${index + 1}: Invalid date format. Use YYYY-MM-DD`);
+                        return;
+                    }
+                    if (!['buy', 'sell'].includes(type.toLowerCase())) {
+                        errorMessages.push(`Line ${index + 1}: Invalid type. Use 'buy' or 'sell'`);
+                        return;
+                    }
+                    if (isNaN(price) || price <= 0) {
+                        errorMessages.push(`Line ${index + 1}: Invalid price. Must be a positive number`);
+                        return;
+                    }
+                    if (isNaN(modalBeli) || modalBeli <= 0) {
+                        errorMessages.push(`Line ${index + 1}: Invalid investment. Must be a positive number`);
+                        return;
+                    }
+                    if (!coins.some(c => c.symbol === coin)) {
+                        errorMessages.push(`Line ${index + 1}: Invalid coin symbol. Supported coins: ${coins.map(c => c.symbol).join(', ')}`);
+                        return;
+                    }
+                    
+                    const quantity = modalBeli / price;
+                    
+                    // VALIDASI SALDO UNTUK SELL
+                    if (type.toLowerCase() === 'sell') {
+                        if (!tempBalances[coin]) {
+                            tempBalances[coin] = getCoinBalance(coin);
+                        }
+                        
+                        if (quantity > tempBalances[coin]) {
+                            errorMessages.push(`Line ${index + 1}: Cannot sell ${quantity.toFixed(8)} ${coin}. Current balance: ${tempBalances[coin].toFixed(8)}`);
+                            return;
+                        } else {
+                            tempBalances[coin] -= quantity;
+                        }
+                    } else {
+                        // Untuk buy, tambahkan ke saldo
+                        if (!tempBalances[coin]) {
+                            tempBalances[coin] = getCoinBalance(coin);
+                        }
+                        tempBalances[coin] += quantity;
+                    }
+                    
+                    validTransactions.push({ 
+                        date, 
+                        coin, 
+                        type: type.toLowerCase(), 
+                        quantity, 
+                        price, 
+                        modalBeli 
+                    });
+                });
+                
+                if (errorMessages.length > 0) {
+                    batchError.innerHTML = errorMessages.join('<br>');
+                    return;
+                }
+                
+                transactions.push(...validTransactions);
+                saveTransactions();
+                document.getElementById('batchTransactionForm').reset();
+                updatePrices();
+            });
+
+            // Clear all transactions
+            document.getElementById('clearTransactions').addEventListener('click', function() {
+                if (confirm('Are you sure you want to clear all transactions? This action cannot be undone.')) {
+                    transactions = [];
+                    localStorage.removeItem('cryptoTransactions');
+                    selectedCoin = '';
+                    updatePrices();
+                }
+            });
+
+            // Chart type switching
+            document.getElementById('showValueChart').addEventListener('click', function() {
+                chartType = 'value';
+                updateChartButtons();
+                updateDashboard();
+            });
+            document.getElementById('showInvestmentChart').addEventListener('click', function() {
+                chartType = 'investment';
+                updateChartButtons();
+                updateDashboard();
+            });
+            document.getElementById('showHoldingsChart').addEventListener('click', function() {
+                chartType = 'holdings';
+                updateChartButtons();
+                updateDashboard();
+            });
+            function updateChartButtons() {
+                document.querySelectorAll('.chart-actions button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                if (chartType === 'value') {
+                    document.getElementById('showValueChart').classList.add('active');
+                } else if (chartType === 'investment') {
+                    document.getElementById('showInvestmentChart').classList.add('active');
+                } else {
+                    document.getElementById('showHoldingsChart').classList.add('active');
+                }
+            }
+
+            // Currency selector event listener
+            document.getElementById('currencySelector').addEventListener('change', function() {
+                selectedCurrency = this.value;
+                // Update form labels
+                const priceLabel = document.querySelector('label[for="price"]');
+                priceLabel.textContent = `Price (${selectedCurrency})`;
+                const investmentLabel = document.querySelector('label[for="modalBeli"]');
+                investmentLabel.textContent = `Investment (${selectedCurrency})`;
+                // Refetch prices to update with new currency
+                updatePrices();
+            });
+
+            // Coin selector for price display
+            document.getElementById('priceCoinSelector').addEventListener('change', function() {
+                selectedCoinForPrice = this.value;
+                updatePriceDisplay();
+            });
+
+            // Event listeners for balance info updates
+            document.getElementById('coin').addEventListener('change', updateBalanceInfo);
+            document.getElementById('type').addEventListener('change', updateBalanceInfo);
+
+            // Initialize portfolio
+            fetchCoinList().then(() => {
+                loadTransactions();
+                updatePrices();
+                setInterval(updatePrices, 30000); // Update every 30 seconds
+                // Initialize coin selector
+                updateCoinSelector();
+                // Set initial labels
+                document.getElementById('currencySelector').value = selectedCurrency;
+            });
+        }
+
+        // ==================== ADMIN PANEL FUNCTIONS ====================
+        
+        let users = [];
+        let currentPage = 1;
+        const usersPerPage = 10;
+        let userActivityChart = null;
+        
+        function initializeAdminPanel() {
+            console.log("Initializing Admin Panel...");
+            
+            // Set current admin info
+            document.getElementById('currentAdmin').textContent = currentAdmin.username;
+            
+            // Load users
+            loadUsers();
+            
+            // Setup event listeners
+            setupAdminEventListeners();
+            
+            // Load statistics
+            loadStatistics();
+            
+            // Load activity logs
+            loadActivityLogs();
+            
+            // Setup theme toggle for admin panel
+            setupAdminThemeToggle();
+        }
+        
+        function setupAdminEventListeners() {
+            // Admin tab switching
+            document.querySelectorAll('#adminTabs .tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('#adminTabs .tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('#adminPanel .tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    const tabId = tab.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                    
+                    // Load content based on tab
+                    if (tabId === 'adminStats') {
+                        loadStatistics();
+                    } else if (tabId === 'adminLogs') {
+                        loadActivityLogs();
+                    }
+                });
+            });
+            
+            // Add user form toggle
+            document.getElementById('addUserBtn').addEventListener('click', () => {
+                const form = document.getElementById('addUserForm');
+                form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            });
+            
+            document.getElementById('cancelAddUserBtn').addEventListener('click', () => {
+                document.getElementById('addUserForm').style.display = 'none';
+                document.getElementById('addUserForm').reset();
+            });
+            
+            // Save new user
+            document.getElementById('saveUserBtn').addEventListener('click', addNewUser);
+            
+            // User search
+            document.getElementById('userSearch').addEventListener('input', filterUsers);
+            
+            // Pagination
+            document.getElementById('prevPageBtn').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderUserTable();
+                }
+            });
+            
+            document.getElementById('nextPageBtn').addEventListener('click', () => {
+                const totalPages = Math.ceil(users.length / usersPerPage);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderUserTable();
+                }
+            });
+            
+            // Settings save buttons
+            document.getElementById('saveSecuritySettings').addEventListener('click', saveSecuritySettings);
+            document.getElementById('saveNotificationSettings').addEventListener('click', saveNotificationSettings);
+            
+            // Database buttons
+            document.getElementById('backupDBBtn').addEventListener('click', backupDatabase);
+            document.getElementById('cleanupDBBtn').addEventListener('click', cleanupDatabase);
+            
+            // Activity logs filter
+            document.getElementById('filterLogsBtn').addEventListener('click', loadActivityLogs);
+            document.getElementById('clearLogsFilterBtn').addEventListener('click', clearLogsFilter);
+            document.getElementById('clearOldLogsBtn').addEventListener('click', clearOldLogs);
+            
+            // Refresh activity
+            document.getElementById('refreshActivityBtn').addEventListener('click', loadStatistics);
+            
+            // Chart buttons
+            document.querySelectorAll('[data-chart]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('[data-chart]').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    updateUserActivityChart(this.getAttribute('data-chart'));
+                });
+            });
+            
+            // Modal close
+            document.getElementById('closeUserModal').addEventListener('click', () => {
+                document.getElementById('userDetailModal').classList.add('hidden');
+            });
+            
+            // Back to portfolio button
+            document.getElementById('adminBackBtn').addEventListener('click', () => {
+                document.getElementById('adminPanel').classList.add('hidden');
+                document.getElementById('portfolioPage').classList.remove('hidden');
+            });
+            
+            // Admin logout
+            document.getElementById('adminLogoutBtn').addEventListener('click', logout);
+        }
+        
+        function setupAdminThemeToggle() {
+            const themeToggle = document.getElementById('adminThemeToggle');
+            const themeIcon = themeToggle.querySelector('i');
+            
+            const updateThemeIcon = () => {
+                const isLightTheme = document.body.classList.contains('light-theme');
+                themeIcon.className = isLightTheme ? 'fas fa-sun' : 'fas fa-moon';
+            };
+            
+            const storedTheme = localStorage.getItem('theme') || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+            if (storedTheme === 'light') {
+                document.body.classList.add('light-theme');
+            }
+            updateThemeIcon();
+            
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('light-theme');
+                updateThemeIcon();
+                localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+            });
+        }
+        
+        async function loadUsers() {
+            try {
+                const snapshot = await db.collection('users').get();
+                users = [];
+                
+                snapshot.forEach(doc => {
+                    users.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                // Sort by creation date (newest first)
+                users.sort((a, b) => {
+                    const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+                    const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+                    return dateB - dateA;
+                });
+                
+                renderUserTable();
+                updateUserStats();
+                
+            } catch (error) {
+                console.error("Error loading users:", error);
+                showAdminNotification('Failed to load users', 'error');
+            }
+        }
+        
+        function renderUserTable() {
+            const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+            let filteredUsers = users;
+            
+            // Apply search filter
+            if (searchTerm) {
+                filteredUsers = users.filter(user => 
+                    user.username.toLowerCase().includes(searchTerm) ||
+                    (user.email && user.email.toLowerCase().includes(searchTerm)) ||
+                    user.role.toLowerCase().includes(searchTerm) ||
+                    user.status.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            const startIndex = (currentPage - 1) * usersPerPage;
+            const endIndex = startIndex + usersPerPage;
+            const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+            
+            const tableBody = document.getElementById('userTable');
+            tableBody.innerHTML = '';
+            
+            if (paginatedUsers.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px;">
+                            <i class="fas fa-user-slash" style="font-size: 48px; margin-bottom: 15px; color: var(--text-secondary);"></i>
+                            <p>No users found</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            paginatedUsers.forEach(user => {
+                const row = tableBody.insertRow();
+                
+                // Username
+                const usernameCell = row.insertCell();
+                usernameCell.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #4361ee, #4ecdc4); 
+                             display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                            ${user.username.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <strong>${user.username}</strong>
+                            ${user.online ? '<span style="color: var(--success); font-size: 12px;">● Online</span>' : ''}
+                        </div>
+                    </div>
+                `;
+                
+                // Email
+                const emailCell = row.insertCell();
+                emailCell.textContent = user.email || 'N/A';
+                emailCell.style.color = 'var(--text-primary)';
+                
+                // Role
+                const roleCell = row.insertCell();
+                roleCell.innerHTML = `<span class="role-badge role-${user.role}">${user.role.toUpperCase()}</span>`;
+                
+                // Status
+                const statusCell = row.insertCell();
+                statusCell.innerHTML = `<span class="status-badge status-${user.status}">${user.status.toUpperCase()}</span>`;
+                
+                // Last Login
+                const lastLoginCell = row.insertCell();
+                lastLoginCell.textContent = formatRelativeTime(user.lastLogin?.toDate?.() || user.lastLogin);
+                lastLoginCell.style.color = 'var(--text-primary)';
+                
+                // Created
+                const createdCell = row.insertCell();
+                createdCell.textContent = formatDate(user.createdAt?.toDate?.() || user.createdAt);
+                createdCell.style.color = 'var(--text-primary)';
+                
+                // Actions
+                const actionsCell = row.insertCell();
+                actionsCell.innerHTML = `
+                    <div class="action-buttons">
+                        <button class="action-btn" onclick="viewUserDetails('${user.id}')" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="action-btn" onclick="editUser('${user.id}')" title="Edit User">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        ${user.status === 'active' ? 
+                            `<button class="action-btn btn-danger action-btn-small" onclick="suspendUser('${user.id}')" title="Suspend User">
+                                <i class="fas fa-user-slash"></i>
+                            </button>` :
+                            `<button class="action-btn btn-success action-btn-small" onclick="activateUser('${user.id}')" title="Activate User">
+                                <i class="fas fa-user-check"></i>
+                            </button>`
+                        }
+                        <button class="action-btn btn-danger action-btn-small" onclick="deleteUser('${user.id}')" title="Delete User">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+            });
+            
+            // Update pagination controls
+            const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+            document.getElementById('currentPage').textContent = currentPage;
+            document.getElementById('totalPages').textContent = totalPages;
+            document.getElementById('prevPageBtn').disabled = currentPage <= 1;
+            document.getElementById('nextPageBtn').disabled = currentPage >= totalPages;
+            document.getElementById('userCount').textContent = `${filteredUsers.length} users found`;
+            document.getElementById('userCount').style.color = 'var(--text-secondary)';
+        }
+        
+        function filterUsers() {
+            currentPage = 1;
+            renderUserTable();
+        }
+        
+        async function addNewUser() {
+            const username = document.getElementById('newUsername').value.trim();
+            const password = document.getElementById('newPassword').value.trim();
+            const role = document.getElementById('newRole').value;
+            const email = document.getElementById('newEmail').value.trim();
+            const status = document.getElementById('newStatus').value;
+            
+            if (!username || !password) {
+                showAdminNotification('Username and password are required', 'error');
+                return;
+            }
+            
+            try {
+                // Check if username already exists
+                const existingUser = await db.collection('users')
+                    .where('username', '==', username)
+                    .limit(1)
+                    .get();
+                
+                if (!existingUser.empty) {
+                    showAdminNotification('Username already exists', 'error');
+                    return;
+                }
+                
+                // Create new user
+                const userData = {
+                    username,
+                    password,
+                    role,
+                    status,
+                    email: email || '',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    online: false,
+                    lastLogin: null
+                };
+                
+                await db.collection('users').add(userData);
+                
+                // Log activity
+                await db.collection('activity_logs').add({
+                    userId: currentAdmin.id,
+                    username: currentAdmin.username,
+                    action: 'create',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    details: `Created user: ${username} (${role})`,
+                    ipAddress: 'N/A'
+                });
+                
+                showAdminNotification(`User ${username} created successfully`, 'success');
+                
+                // Reset form and hide it
+                document.getElementById('addUserForm').reset();
+                document.getElementById('addUserForm').style.display = 'none';
+                
+                // Reload users
+                loadUsers();
+                
+            } catch (error) {
+                console.error("Error adding user:", error);
+                showAdminNotification('Failed to create user', 'error');
+            }
+        }
+        
+        async function viewUserDetails(userId) {
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+                if (!userDoc.exists) {
+                    showAdminNotification('User not found', 'error');
+                    return;
+                }
+                
+                const user = userDoc.data();
+                const userLogs = await db.collection('activity_logs')
+                    .where('userId', '==', userId)
+                    .orderBy('timestamp', 'desc')
+                    .limit(10)
+                    .get();
+                
+                let logsHtml = '<h4>Recent Activity</h4>';
+                if (userLogs.empty) {
+                    logsHtml += '<p>No recent activity</p>';
+                } else {
+                    logsHtml += '<div class="user-activity-log">';
+                    userLogs.forEach(logDoc => {
+                        const log = logDoc.data();
+                        logsHtml += `
+                            <div class="activity-item">
+                                <strong>${log.action.toUpperCase()}</strong><br>
+                                ${log.details}<br>
+                                <span class="activity-time">${formatDate(log.timestamp?.toDate?.())}</span>
+                            </div>
+                        `;
+                    });
+                    logsHtml += '</div>';
+                }
+                
+                document.getElementById('userDetailContent').innerHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <div style="width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, #4361ee, #4ecdc4); 
+                                 display: flex; align-items: center; justify-content: center; color: white; font-size: 36px; font-weight: bold; margin: 0 auto 20px;">
+                                ${user.username.charAt(0).toUpperCase()}
+                            </div>
+                            <div style="text-align: center;">
+                                <h3>${user.username}</h3>
+                                <div style="margin: 10px 0;">
+                                    <span class="role-badge role-${user.role}">${user.role.toUpperCase()}</span>
+                                    <span class="status-badge status-${user.status}" style="margin-left: 10px;">${user.status.toUpperCase()}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h4>User Information</h4>
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr>
+                                    <td style="padding: 8px 0; border-bottom: 1px solid var(--card-border); color: var(--text-secondary);">Email:</td>
+                                    <td style="padding: 8px 0; border-bottom: 1px solid var(--card-border); color: var(--text-primary);">${user.email || 'N/A'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; border-bottom: 1px solid var(--card-border); color: var(--text-secondary);">Last Login:</td>
+                                    <td style="padding: 8px 0; border-bottom: 1px solid var(--card-border); color: var(--text-primary);">${formatDate(user.lastLogin?.toDate?.())}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; border-bottom: 1px solid var(--card-border); color: var(--text-secondary);">Created:</td>
+                                    <td style="padding: 8px 0; border-bottom: 1px solid var(--card-border); color: var(--text-primary);">${formatDate(user.createdAt?.toDate?.())}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; color: var(--text-secondary);">Online Status:</td>
+                                    <td style="padding: 8px 0; color: var(--text-primary);">${user.online ? '<span style="color: var(--success);">● Online</span>' : '<span style="color: var(--text-secondary);">● Offline</span>'}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    ${logsHtml}
+                    <div style="margin-top: 20px; display: flex; gap: 10px;">
+                        <button class="btn" onclick="editUser('${userId}')">
+                            <i class="fas fa-edit"></i> Edit User
+                        </button>
+                        ${user.status === 'active' ? 
+                            `<button class="btn btn-warning" onclick="suspendUser('${userId}')">
+                                <i class="fas fa-user-slash"></i> Suspend User
+                            </button>` :
+                            `<button class="btn btn-success" onclick="activateUser('${userId}')">
+                                <i class="fas fa-user-check"></i> Activate User
+                            </button>`
+                        }
+                        <button class="btn btn-danger" onclick="deleteUser('${userId}')">
+                            <i class="fas fa-trash"></i> Delete User
+                        </button>
+                    </div>
+                `;
+                
+                document.getElementById('userDetailModal').classList.remove('hidden');
+                
+            } catch (error) {
+                console.error("Error viewing user details:", error);
+                showAdminNotification('Failed to load user details', 'error');
+            }
+        }
+        
+        async function editUser(userId) {
+            const userDoc = await db.collection('users').doc(userId).get();
+            if (!userDoc.exists) {
+                showAdminNotification('User not found', 'error');
+                return;
+            }
+            
+            const user = userDoc.data();
+            
+            document.getElementById('userDetailContent').innerHTML = `
+                <h3>Edit User: ${user.username}</h3>
+                <form id="editUserForm" style="margin-top: 20px;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label style="color: var(--text-secondary);">Username</label>
+                            <input type="text" id="editUsername" class="form-control" value="${user.username}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label style="color: var(--text-secondary);">New Password (leave empty to keep current)</label>
+                            <input type="password" id="editPassword" class="form-control" placeholder="New password">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label style="color: var(--text-secondary);">Email</label>
+                            <input type="email" id="editEmail" class="form-control" value="${user.email || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label style="color: var(--text-secondary);">Role</label>
+                            <select id="editRole" class="form-control">
+                                <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
+                                <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label style="color: var(--text-secondary);">Status</label>
+                            <select id="editStatus" class="form-control">
+                                <option value="active" ${user.status === 'active' ? 'selected' : ''}>Active</option>
+                                <option value="suspended" ${user.status === 'suspended' ? 'selected' : ''}>Suspended</option>
+                                <option value="pending" ${user.status === 'pending' ? 'selected' : ''}>Pending</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row" style="margin-top: 20px;">
+                        <button type="button" class="btn" onclick="saveUserChanges('${userId}')">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="viewUserDetails('${userId}')" style="margin-left: 10px;">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            `;
+            
+            document.getElementById('userDetailModal').classList.remove('hidden');
+        }
+        
+        async function saveUserChanges(userId) {
+            const newPassword = document.getElementById('editPassword').value.trim();
+            const email = document.getElementById('editEmail').value.trim();
+            const role = document.getElementById('editRole').value;
+            const status = document.getElementById('editStatus').value;
+            
+            try {
+                const updateData = {
+                    email,
+                    role,
+                    status,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                if (newPassword) {
+                    updateData.password = newPassword;
+                }
+                
+                await db.collection('users').doc(userId).update(updateData);
+                
+                // Log activity
+                await db.collection('activity_logs').add({
+                    userId: currentAdmin.id,
+                    username: currentAdmin.username,
+                    action: 'update',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    details: `Updated user: ${document.getElementById('editUsername').value}`,
+                    ipAddress: 'N/A'
+                });
+                
+                showAdminNotification('User updated successfully', 'success');
+                
+                // Close modal and reload users
+                document.getElementById('userDetailModal').classList.add('hidden');
+                loadUsers();
+                
+            } catch (error) {
+                console.error("Error updating user:", error);
+                showAdminNotification('Failed to update user', 'error');
+            }
+        }
+        
+        async function suspendUser(userId) {
+            if (!confirm('Are you sure you want to suspend this user? They will not be able to login.')) {
+                return;
+            }
+            
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+                const username = userDoc.data().username;
+                
+                await db.collection('users').doc(userId).update({
+                    status: 'suspended',
+                    suspendedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // Log activity
+                await db.collection('activity_logs').add({
+                    userId: currentAdmin.id,
+                    username: currentAdmin.username,
+                    action: 'suspend',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    details: `Suspended user: ${username}`,
+                    ipAddress: 'N/A'
+                });
+                
+                showAdminNotification(`User ${username} suspended`, 'success');
+                loadUsers();
+                
+            } catch (error) {
+                console.error("Error suspending user:", error);
+                showAdminNotification('Failed to suspend user', 'error');
+            }
+        }
+        
+        async function activateUser(userId) {
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+                const username = userDoc.data().username;
+                
+                await db.collection('users').doc(userId).update({
+                    status: 'active',
+                    activatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // Log activity
+                await db.collection('activity_logs').add({
+                    userId: currentAdmin.id,
+                    username: currentAdmin.username,
+                    action: 'activate',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    details: `Activated user: ${username}`,
+                    ipAddress: 'N/A'
+                });
+                
+                showAdminNotification(`User ${username} activated`, 'success');
+                loadUsers();
+                
+            } catch (error) {
+                console.error("Error activating user:", error);
+                showAdminNotification('Failed to activate user', 'error');
+            }
+        }
+        
+        async function deleteUser(userId) {
+            if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+                return;
+            }
+            
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+                const username = userDoc.data().username;
+                
+                // Don't allow self-deletion
+                if (userId === currentAdmin.id) {
+                    showAdminNotification('You cannot delete your own account', 'error');
+                    return;
+                }
+                
+                await db.collection('users').doc(userId).delete();
+                
+                // Log activity
+                await db.collection('activity_logs').add({
+                    userId: currentAdmin.id,
+                    username: currentAdmin.username,
+                    action: 'delete',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    details: `Deleted user: ${username}`,
+                    ipAddress: 'N/A'
+                });
+                
+                showAdminNotification(`User ${username} deleted`, 'success');
+                loadUsers();
+                
+            } catch (error) {
+                console.error("Error deleting user:", error);
+                showAdminNotification('Failed to delete user', 'error');
+            }
+        }
+        
+        function updateUserStats() {
+            const totalUsers = users.length;
+            const activeUsers = users.filter(u => u.status === 'active').length;
+            const suspendedUsers = users.filter(u => u.status === 'suspended').length;
+            const adminUsers = users.filter(u => u.role === 'admin').length;
+            
+            document.getElementById('totalUsers').textContent = totalUsers;
+            document.getElementById('activeUsers').textContent = activeUsers;
+            document.getElementById('suspendedUsers').textContent = suspendedUsers;
+            document.getElementById('adminUsersCount').textContent = adminUsers;
+        }
+        
+        async function loadStatistics() {
+            try {
+                updateUserStats();
+                
+                // Load recent activity for stats tab
+                const activitySnapshot = await db.collection('activity_logs')
+                    .orderBy('timestamp', 'desc')
+                    .limit(20)
+                    .get();
+                
+                const activityTable = document.getElementById('recentActivityTable');
+                activityTable.innerHTML = '';
+                
+                if (activitySnapshot.empty) {
+                    activityTable.innerHTML = `
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                No recent activity
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    activitySnapshot.forEach(doc => {
+                        const activity = doc.data();
+                        const row = activityTable.insertRow();
+                        const timeCell = row.insertCell();
+                        timeCell.textContent = formatDate(activity.timestamp?.toDate?.());
+                        timeCell.style.color = 'var(--text-primary)';
+                        
+                        const userCell = row.insertCell();
+                        userCell.textContent = activity.username || 'System';
+                        userCell.style.color = 'var(--text-primary)';
+                        
+                        const actionCell = row.insertCell();
+                        actionCell.textContent = activity.details || activity.action;
+                        actionCell.style.color = 'var(--text-primary)';
+                        
+                        const ipCell = row.insertCell();
+                        ipCell.textContent = activity.ipAddress || 'N/A';
+                        ipCell.style.color = 'var(--text-primary)';
+                    });
+                }
+                
+                // Update chart
+                updateUserActivityChart('daily');
+                
+            } catch (error) {
+                console.error("Error loading statistics:", error);
+            }
+        }
+        
+        async function updateUserActivityChart(period) {
+            try {
+                // This is a simplified version - in production, you'd query actual data
+                const ctx = document.getElementById('userActivityChart').getContext('2d');
+                
+                // Destroy existing chart if it exists
+                if (userActivityChart) {
+                    userActivityChart.destroy();
+                }
+                
+                // Sample data for demonstration
+                let labels, data;
+                if (period === 'daily') {
+                    labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                    data = [65, 59, 80, 81, 56, 55, 40];
+                } else if (period === 'weekly') {
+                    labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+                    data = [120, 150, 180, 200];
+                } else {
+                    labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                    data = [500, 600, 750, 800, 900, 1000];
+                }
+                
+                userActivityChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'User Logins',
+                            data: data,
+                            backgroundColor: 'rgba(78, 205, 196, 0.2)',
+                            borderColor: '#4ecdc4',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Number of Logins'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        }
+                    }
+                });
+                
+            } catch (error) {
+                console.error("Error updating chart:", error);
+            }
+        }
+        
+        async function loadActivityLogs() {
+            try {
+                const dateFilter = document.getElementById('logDate').value;
+                const userFilter = document.getElementById('logUser').value.trim();
+                const typeFilter = document.getElementById('logType').value;
+                
+                let query = db.collection('activity_logs').orderBy('timestamp', 'desc');
+                
+                // Apply filters
+                if (dateFilter) {
+                    const startDate = new Date(dateFilter);
+                    const endDate = new Date(startDate);
+                    endDate.setDate(endDate.getDate() + 1);
+                    
+                    query = query.where('timestamp', '>=', startDate)
+                                 .where('timestamp', '<', endDate);
+                }
+                
+                const snapshot = await query.limit(50).get();
+                
+                const logsTable = document.getElementById('activityLogsTable');
+                logsTable.innerHTML = '';
+                
+                if (snapshot.empty) {
+                    logsTable.innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                No activity logs found
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    snapshot.forEach(doc => {
+                        const log = doc.data();
+                        
+                        // Apply client-side filters
+                        if (userFilter && (!log.username || !log.username.toLowerCase().includes(userFilter.toLowerCase()))) {
+                            return;
+                        }
+                        
+                        if (typeFilter && log.action !== typeFilter) {
+                            return;
+                        }
+                        
+                        const row = logsTable.insertRow();
+                        const timeCell = row.insertCell();
+                        timeCell.textContent = formatDate(log.timestamp?.toDate?.());
+                        timeCell.style.color = 'var(--text-primary)';
+                        
+                        const userCell = row.insertCell();
+                        userCell.textContent = log.username || 'System';
+                        userCell.style.color = 'var(--text-primary)';
+                        
+                        const actionCell = row.insertCell();
+                        actionCell.innerHTML = `<span class="status-badge status-${log.action}">${log.action.toUpperCase()}</span>`;
+                        
+                        const detailsCell = row.insertCell();
+                        detailsCell.textContent = log.details || 'No details';
+                        detailsCell.style.color = 'var(--text-primary)';
+                        
+                        const ipCell = row.insertCell();
+                        ipCell.textContent = log.ipAddress || 'N/A';
+                        ipCell.style.color = 'var(--text-primary)';
+                    });
+                }
+                
+            } catch (error) {
+                console.error("Error loading activity logs:", error);
+                showAdminNotification('Failed to load activity logs', 'error');
+            }
+        }
+        
+        function clearLogsFilter() {
+            document.getElementById('logDate').value = '';
+            document.getElementById('logUser').value = '';
+            document.getElementById('logType').value = '';
+            loadActivityLogs();
+        }
+        
+        async function clearOldLogs() {
+            if (!confirm('Delete activity logs older than 90 days? This action cannot be undone.')) {
+                return;
+            }
+            
+            try {
+                const cutoffDate = new Date();
+                cutoffDate.setDate(cutoffDate.getDate() - 90);
+                
+                const snapshot = await db.collection('activity_logs')
+                    .where('timestamp', '<', cutoffDate)
+                    .get();
+                
+                const batch = db.batch();
+                snapshot.docs.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                
+                await batch.commit();
+                
+                showAdminNotification(`Deleted ${snapshot.size} old activity logs`, 'success');
+                loadActivityLogs();
+                
+            } catch (error) {
+                console.error("Error clearing old logs:", error);
+                showAdminNotification('Failed to clear old logs', 'error');
+            }
+        }
+        
+        async function saveSecuritySettings() {
+            const sessionTimeout = document.getElementById('sessionTimeout').value;
+            const maxLoginAttempts = document.getElementById('maxLoginAttempts').value;
+            const enable2FA = document.getElementById('enable2FA').checked;
+            
+            // In a real app, you would save these to Firestore
+            localStorage.setItem('admin_session_timeout', sessionTimeout);
+            localStorage.setItem('admin_max_login_attempts', maxLoginAttempts);
+            localStorage.setItem('admin_enable_2fa', enable2FA);
+            
+            showAdminNotification('Security settings saved successfully', 'success');
+        }
+        
+        async function saveNotificationSettings() {
+            const notifyNewUser = document.getElementById('notifyNewUser').checked;
+            const notifySuspicious = document.getElementById('notifySuspicious').checked;
+            const adminEmail = document.getElementById('adminEmail').value;
+            
+            // In a real app, you would save these to Firestore
+            localStorage.setItem('admin_notify_new_user', notifyNewUser);
+            localStorage.setItem('admin_notify_suspicious', notifySuspicious);
+            localStorage.setItem('admin_notification_email', adminEmail);
+            
+            showAdminNotification('Notification settings saved successfully', 'success');
+        }
+        
+        async function backupDatabase() {
+            showAdminNotification('Backup feature coming soon!', 'info');
+            // In production, you would implement database backup here
+        }
+        
+        async function cleanupDatabase() {
+            if (!confirm('Cleanup old data? This will remove temporary files and cache.')) {
+                return;
+            }
+            
+            showAdminNotification('Database cleanup completed', 'success');
+        }
+
+        // ==================== EVENT LISTENERS ====================
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // User Login
+            document.getElementById('loginBtn').addEventListener('click', handleUserLogin);
+            
+            // Portfolio logout button
+            document.getElementById('logoutPortfolioBtn').addEventListener('click', logout);
+            
+            // Admin logout button
+            document.getElementById('adminLogoutBtn').addEventListener('click', logout);
+            
+            // Enter key for login
+            document.getElementById('password').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleUserLogin();
+                }
+            });
+            
+            // Check for existing session on page load
+            setTimeout(() => {
+                checkAndRestoreSession();
+            }, 500);
+        });
+
+        function logout() {
+            // Clear session from localStorage
+            clearSession();
+            
+            // Log activity if user is logged in
+            if (currentUser) {
+                db.collection('activity_logs').add({
+                    userId: currentUser.id,
+                    username: currentUser.username,
+                    action: 'logout',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    details: 'User logged out',
+                    ipAddress: 'N/A'
+                });
+                
+                // Update user online status
+                db.collection('users').doc(currentUser.id).update({
+                    online: false
+                });
+            }
+            
+            // Reset everything
+            currentAdmin = null;
+            currentUser = null;
+            users = [];
+            
+            // Show login page
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('portfolioPage').classList.add('hidden');
+            document.getElementById('adminPanel').classList.add('hidden');
+            
+            // Clear password field
+            document.getElementById('password').value = '';
+            
+            showAlert('Logged out successfully!', 'success');
+        }
+    </script>
+</body>
+</html>
